@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 window.addEventListener('DOMContentLoaded', function () {
 
@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded', function () {
 
         function getTimeRemaining() {
             const dateStop = new Date(deadline).getTime();
-            let dateNow = new Date().getTime() // чтобы посчитать миллисекунды
+            let dateNow = new Date().getTime(); // чтобы посчитать миллисекунды
             let timeRemaining = (dateStop - dateNow) / 1000;
             let seconds = Math.floor(timeRemaining % 60);
             let minutes = Math.floor((timeRemaining / 60) % 60);
@@ -35,8 +35,7 @@ window.addEventListener('DOMContentLoaded', function () {
         }
 
         function updateTimer() {
-            let timer = getTimeRemaining()
-
+            let timer = getTimeRemaining();
             timerHours.textContent = addZero(timer.hours);
             timerMinutes.textContent = addZero(timer.minutes);
             timerSeconds.textContent = addZero(timer.seconds);
@@ -71,10 +70,11 @@ const toggleMenu = () => {
     };
     menuBtn.addEventListener('click', handlerMenu);
 
-    closeBtn.addEventListener('click', handlerMenu);
-
-    menuItems.forEach(item => {
-        item.addEventListener('click', handlerMenu);
+    menuBlock.addEventListener('click', (evt) => {
+        let target = evt.target;
+        if (target.matches('a')) {
+            handlerMenu();
+        }
     })
 };
 
@@ -85,26 +85,255 @@ toggleMenu();
 const togglePopUp = () => {
     const popUp = document.querySelector('.popup');
     const popUpBtn = document.querySelectorAll('.popup-btn');
-    const popUpClose = document.querySelector('.popup-close');
 
     popUpBtn.forEach(item => item.addEventListener('click', () => {
-        setTimeout(popUpAnimate, 10);
+        setTimeout(popUpAnimate, 20);
 
         popUp.style.display = 'block';
     }));
 
     const popUpAnimate = () => {
-        popUp.children[0].style.transition = '1s'
-        popUp.children[0].style.transform = 'scale(1.5)'
+        popUp.children[0].style.transition = '1s';
+        popUp.children[0].style.transform = 'scale(1)'
     };
 
-    popUpClose.addEventListener('click', () => {
+    const closePopUp = () => {
         popUp.style.display = 'none';
         popUp.children[0].style.transform = 'scale(0)'
-    })
+    }
 
+    popUp.addEventListener('click', (evt => {
+        let target = evt.target;
 
+        target = target.closest('.popup-content');
+        if (!target || target.classList.contains('.popup-close')) {
+            closePopUp();
+        }
+    }))
 };
 
 
 togglePopUp();
+
+// плавная прокрутка
+
+const scroll = () => {
+    const scrollBtn = document.getElementById('scrollBtn');
+    scrollBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        const service = document.querySelector('.service');
+        service.scrollIntoView({behavior: "smooth"});
+    });
+
+    const menu = document.querySelector('menu')
+    menu.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        let target = evt.target;
+       if (target.matches('a') &&
+           !target.matches('.close-btn') ) {
+           let scrollToClass = document.getElementById(target.getAttribute('href').slice(1));
+               scrollToClass.scrollIntoView({behavior: "smooth"})
+       } else {
+           return
+       }
+    })
+};
+
+scroll();
+
+// табы
+const tabs = () => {
+    const tabHeader = document.querySelector('.service-header');
+    const tabs = tabHeader.querySelectorAll('.service-header-tab');
+    const tabContent = document.querySelectorAll('.service-tab');
+
+    const toggleTabContent = (index) => {
+        for (let i = 0; i < tabContent.length; i++) {
+            if (index === i) {
+                tabContent[i].classList.remove('d-none');
+                tabs[i].classList.add('active')
+            } else {
+                tabContent[i].classList.add('d-none');
+                tabs[i].classList.remove('active');
+            }
+        }
+    };
+
+    tabHeader.addEventListener('click', (evt => {
+        let target = evt.target;
+        target = target.closest('.service-header-tab'); // потому что часть срочки внутри таба - span без класса
+        if (target.classList.contains('service-header-tab')) {
+            tabs.forEach((item, index) => {
+                if (item === target) {
+                    toggleTabContent(index);
+                }
+            })
+        }
+        target = target.parentNode;
+    }))
+};
+
+tabs();
+
+// Портфолио-слайдер
+
+const slider = () => {
+    const slides = document.querySelectorAll('.portfolio-item');
+    const slider = document.querySelector('.portfolio-content');
+    const dotsArea = document.querySelector('.portfolio-dots');
+    // const dot = document.querySelectorAll('.dot');
+
+    let dots = [];
+
+    const createDot = function () {
+        let li = document.createElement('li');
+        li.classList.add('dot');
+        dotsArea.append(li);
+        dots.push(li);
+
+        if (dots.length === 1) {
+            li.classList.add('dot-active');
+        }
+    };
+
+    slides.forEach(slide => createDot());
+    let currentSlideIdx = 0;
+    let interval;
+
+    const prevSlide = (element, index, strClass) => {
+        element[index].classList.remove(strClass)
+    };
+    const nextSlide = (element, index, strClass) => {
+        element[index].classList.add(strClass)
+    };
+
+    const autoPlaySlider = () => {
+        prevSlide(slides, currentSlideIdx, 'portfolio-item-active');
+        prevSlide(dots, currentSlideIdx, 'dot-active');
+        currentSlideIdx++;
+
+        if (currentSlideIdx >= slides.length) {
+            currentSlideIdx = 0
+        }
+        nextSlide(slides, currentSlideIdx, 'portfolio-item-active');
+        nextSlide(dots, currentSlideIdx, 'dot-active')
+
+    };
+
+    const startSlider = (time = 3000) => {
+        interval = setInterval(autoPlaySlider, time);
+    };
+
+    const stopSlider = () => {
+        clearInterval(interval);
+    };
+
+    slider.addEventListener('click', (evt) => {
+        evt.preventDefault();
+
+        let target = evt.target;
+
+        prevSlide(slides, currentSlideIdx, 'portfolio-item-active');
+        prevSlide(dots, currentSlideIdx, 'dot-active');
+
+        if (target.matches('#arrow-right')) {
+            currentSlideIdx++
+        } else if (target.matches('#arrow-left')) {
+            currentSlideIdx--
+        } else if (target.matches('.dot')) {
+            dots.forEach((d, i) => {
+                if (d === target) {
+                    currentSlideIdx = i;
+                }
+            })
+        }
+
+        if (currentSlideIdx >= slides.length) {
+            currentSlideIdx = 0;
+        }
+
+        if (currentSlideIdx < 0) {
+            currentSlideIdx = slides.length - 1;
+        }
+
+        nextSlide(slides, currentSlideIdx, 'portfolio-item-active');
+        nextSlide(dots, currentSlideIdx, 'dot-active');
+    });
+
+    slider.addEventListener('mouseover', (evt) => {
+        let target = evt.target;
+        if (target.matches('.portfolio-btn') ||
+            target.matches('.dot')) {
+            stopSlider()
+        }
+    });
+
+    slider.addEventListener('mouseout', (evt) => {
+        let target = evt.target;
+        if (target.matches('.portfolio-btn') ||
+            target.matches('.dot')) {
+            startSlider()
+        }
+    });
+
+    startSlider(3000);
+
+};
+
+slider();
+
+
+// Калькулятор услуг
+
+const calc = (price = 100) => {
+    const calcBlock = document.getElementById('calc');
+    const calcType = document.querySelector('.calc-type');
+    const calcSquare = document.querySelector('.calc-square');
+    const calcDay = document.querySelector('.calc-day');
+    const calcCount = document.querySelector('.calc-count');
+    const totalValue = document.getElementById('total');
+
+
+    calcBlock.addEventListener('input', (evt) => {
+        let target = evt.target;
+        target.value = target.value.replace(/\D/g, '')
+    });
+
+    const countSum = () => {
+       let total = 0;
+       let typeValue = calcType.options[calcType.selectedIndex].value;
+        console.log(typeValue)
+    };
+
+    calcBlock.addEventListener('change', (evt) => {
+        let target = evt.target;
+        if (target.matches('.calc-item')) {
+            countSum();
+        }
+    });
+};
+
+
+calc();
+
+// Смена фото при наведении
+
+const changePhoto = () => {
+    const photos = document.querySelector('.command');
+    let originalPhoto;
+   photos.addEventListener('mouseover', (evt => {
+      if(evt.target.matches('.command__photo')) {
+          originalPhoto = evt.target.src;
+          evt.target.src = evt.target.dataset.img
+      }
+       photos.addEventListener('mouseout', (evt => {
+           if(evt.target.matches('.command__photo')) {
+               evt.target.src = originalPhoto;
+           }
+       }))
+   }))
+
+
+}
+
+changePhoto();
