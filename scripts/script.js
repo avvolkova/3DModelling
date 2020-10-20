@@ -100,13 +100,13 @@ const togglePopUp = () => {
     const closePopUp = () => {
         popUp.style.display = 'none';
         popUp.children[0].style.transform = 'scale(0)'
-    }
+    };
 
     popUp.addEventListener('click', (evt => {
         let target = evt.target;
 
         target = target.closest('.popup-content');
-        if (!target || target.classList.contains('.popup-close')) {
+        if (!target || evt.target.matches('.popup-close')) {
             closePopUp();
         }
     }))
@@ -129,13 +129,13 @@ const scroll = () => {
     menu.addEventListener('click', (evt) => {
         evt.preventDefault();
         let target = evt.target;
-       if (target.matches('a') &&
-           !target.matches('.close-btn') ) {
-           let scrollToClass = document.getElementById(target.getAttribute('href').slice(1));
-               scrollToClass.scrollIntoView({behavior: "smooth"})
-       } else {
-           return
-       }
+        if (target.matches('a') &&
+            !target.matches('.close-btn')) {
+            let scrollToClass = document.getElementById(target.getAttribute('href').slice(1));
+            scrollToClass.scrollIntoView({behavior: "smooth"})
+        } else {
+            return
+        }
     })
 };
 
@@ -290,7 +290,7 @@ const calc = (price = 100) => {
     const calcType = document.querySelector('.calc-type');
     const calcSquare = document.querySelector('.calc-square');
     const calcDay = document.querySelector('.calc-day');
-    const calcCount = document.querySelector('.calc-count');
+    const roomsCount = document.querySelector('.calc-count');
     const totalValue = document.getElementById('total');
 
 
@@ -300,9 +300,58 @@ const calc = (price = 100) => {
     });
 
     const countSum = () => {
-       let total = 0;
-       let typeValue = calcType.options[calcType.selectedIndex].value;
-        console.log(typeValue)
+        let total = 0;
+        let roomsCountValue = 1;
+
+        const typeValue = calcType.options[calcType.selectedIndex].value / 100;
+        const squareValue = calcSquare.value;
+        let calcDayValue = 1;
+
+        if (calcDay.value) {
+            if (calcDay.value <= 5) {
+                calcDayValue *= 2;
+            } else if (calcDay.value <= 10) {
+                calcDayValue *= 1.5;
+            }
+        }
+
+        if (roomsCount.value > 1) {
+            roomsCountValue += (roomsCount.value - 1) / 10
+        }
+
+        if (typeValue && squareValue) {
+            total = Math.floor(price * typeValue * squareValue * roomsCountValue * calcDayValue);
+        }
+
+        setValue(totalValue, total, true, 100, 1);
+
+    };
+
+    // Анимация для показа результата (взяла из интернета)
+// *inc - увеличение либо уменьшение
+//  *shift - на сколько изменяется значение
+    const setValue = function (elem, value, inc, shift, speed) {
+        let interval = false;
+        if (inc) {
+            interval = setInterval(function () {
+                if (elem.innerHTML * 1 + shift >= value) {
+                    elem.innerHTML = value;
+                    clearInterval(interval);
+                } else {
+                    elem.innerHTML = elem.innerHTML * 1 + shift;
+                }
+            }, speed);
+        } else {
+            interval = setInterval(function () {
+                if (elem.innerHTML * 1 - shift <= value) {
+                    elem.innerHTML = value;
+                    clearInterval(interval);
+                } else {
+                    elem.innerHTML = elem.innerHTML * 1 - shift;
+                }
+            }, speed);
+        }
+
     };
 
     calcBlock.addEventListener('change', (evt) => {
@@ -321,19 +370,85 @@ calc();
 const changePhoto = () => {
     const photos = document.querySelector('.command');
     let originalPhoto;
-   photos.addEventListener('mouseover', (evt => {
-      if(evt.target.matches('.command__photo')) {
-          originalPhoto = evt.target.src;
-          evt.target.src = evt.target.dataset.img
-      }
-       photos.addEventListener('mouseout', (evt => {
-           if(evt.target.matches('.command__photo')) {
-               evt.target.src = originalPhoto;
-           }
-       }))
-   }))
+    photos.addEventListener('mouseover', (evt => {
+        if (evt.target.matches('.command__photo')) {
+            originalPhoto = evt.target.src;
+            evt.target.src = evt.target.dataset.img
+        }
+        photos.addEventListener('mouseout', (evt => {
+            if (evt.target.matches('.command__photo')) {
+                evt.target.src = originalPhoto;
+            }
+        }))
+    }))
 
 
 }
 
 changePhoto();
+
+// send ajax form
+
+const sendForm = () => {
+    const errorMessage = 'Что-то пошло не так',
+        loadMessage = 'Загрузка',
+        successMessage = 'Спасибо! Мы скоро с Вами свяжемся';
+    const forms = document.querySelectorAll('form')
+    const statusMessage = document.createElement('div');
+    statusMessage.style.cssText = `
+    font-size: 5 rem;
+    `;
+
+
+    forms.forEach(form => form.addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        const target = evt.target;
+
+        if (target.matches('#form3')) {
+            let popup = document.querySelector('.popup');
+            popup.style.display = 'none';
+        }
+
+        target.appendChild(statusMessage);
+
+
+
+        const formData = new FormData(form)
+        let body = {};
+        formData.forEach((val, key) => {
+            body[key] = val;
+        })
+
+        postData(body)
+            .then(response => {
+                if (response.status !== 200) {
+                    throw new Error('Status not 200')
+                }
+                statusMessage.textContent = successMessage;
+            })
+            .catch(error => {
+                console.error(error)
+            })
+
+        const inputs = target.querySelectorAll('input');
+        inputs.forEach(function (inp) {
+            inp.value = ''
+        })
+
+    }))
+
+
+    const postData = (body) => {
+        return fetch('./server.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        })
+
+    }
+
+}
+
+sendForm();
